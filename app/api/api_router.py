@@ -1,6 +1,4 @@
 import re
-import requests
-import json
 import networkx as nx
 from fastapi import HTTPException, APIRouter
 from itertools import combinations
@@ -40,15 +38,15 @@ def get_book_info(book_id: int):
     return book_content
 
 
-@router.get("/page={page_num}")
-def get_page_books(page_num: int):
-    try:
-        url = f"https://gutendex.com/books/page={page_num}"
-        response = requests.get(url)
-    except Exception as e:
-        raise HTTPException(status_code=500,
-                            detail=f"Erreur lors de la récupération des informations des livre")
-    return json.loads(response.content.decode())
+# @router.get("/page={page_num}")
+# def get_page_books(page_num: int):
+#     try:
+#         url = f"https://gutendex.com/books/page={page_num}"
+#         response = requests.get(url)
+#     except Exception as e:
+#         raise HTTPException(status_code=500,
+#                             detail=f"Erreur lors de la récupération des informations des livre")
+#     return json.loads(response.content.decode())
 
 
 @router.get("/search")
@@ -84,8 +82,18 @@ async def search_books(q: str):
     # Tri des livres en fonction de l'indice pagerank décroissant
     sorted_books = sorted(books, key=lambda x: x["pagerank"], reverse=True)
 
-    # Renvoi de la liste des livres correspondants
-    return {"books": sorted_books}
+    # Récupération des deux ou trois livres les plus pertinents
+    top_books = sorted_books[:3]
+
+    # Recherche des voisins des livres les plus pertinents
+    neighbors = set()
+    for book in top_books:
+        for neighbor in G.neighbors(book["book_id"]):
+            if neighbor not in [book["book_id"] for book in top_books]:
+                neighbors.add(neighbor)
+
+    # Renvoi de la liste des livres correspondants et des voisins des livres les plus pertinents
+    return {"books": sorted_books, "neighbors": list(neighbors)}
 
 
 @router.get('/search/regex')

@@ -11,7 +11,7 @@ index_table = Connection(db_uri='mongodb://localhost:27017/', db_name='booksdb')
 
 
 @router.get("/{book_id}")
-def get_book_info(book_id: int):
+async def get_book_info(book_id: int):
     try:
         book_info = fetch_book_info(book_id)
     except Exception as e:
@@ -25,7 +25,7 @@ def get_book_info(book_id: int):
 
 
 @router.get("/{book_id}/read")
-def get_book_info(book_id: int):
+async def get_book_info(book_id: int):
     try:
         book_content = fetch_book_content(book_id)
     except Exception as e:
@@ -97,7 +97,7 @@ async def search_books(q: str):
 
 
 @router.get('/search/regex')
-async def search_books_by_regex(regex: str, start: int = 0, end: int = 100):
+async def search_books_by_regex(regex: str):
     regex = re.compile(regex)
     results = index_table.find({'word': {'$regex': regex}})
 
@@ -106,12 +106,11 @@ async def search_books_by_regex(regex: str, start: int = 0, end: int = 100):
     books = {}
     for result in results:
         for book in result['books']:
-            if start <= book['book_id'] <= end:
-                book_id = book['book_id']
-                if book_id not in books:
-                    books[book_id] = {'count': 0, 'words': set()}
-                books[book_id]['count'] += book['count']
-                books[book_id]['words'].add(result['word'])
+            book_id = book['book_id']
+            if book_id not in books:
+                books[book_id] = {'count': 0, 'words': set()}
+            books[book_id]['count'] += book['count']
+            books[book_id]['words'].add(result['word'])
 
     for book1, book2 in combinations(books.keys(), 2):
         common_words = books[book1]['words'].intersection(books[book2]['words'])

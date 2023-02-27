@@ -1,5 +1,4 @@
 import re
-
 import pymongo
 import requests
 import json
@@ -76,6 +75,8 @@ def create_index():
                 index_table.insert_many(batch)
                 batch = []
 
+            print(f"Indexation en cours pour le livre {result['book_id']} ...")
+
         # Insertion des résultats restants
         if len(batch) > 0:
             index_table.insert_many(batch)
@@ -83,6 +84,7 @@ def create_index():
     # Utilisation de l'index pour améliorer les performances
     index_table.create_index([('word', pymongo.ASCENDING)])
     index_table.create_index([('book_id', pymongo.ASCENDING)])
+    print("Indexation terminée !")
 
 
 def fetch_and_process_book(book_id):
@@ -90,6 +92,7 @@ def fetch_and_process_book(book_id):
     Récupère les informations et le contenu d'un livre, puis traite les données et retourne les résultats sous forme de liste.
     """
     # Récupération des informations du livre
+    print(f"Récupération des informations du livre {book_id}")
     book_info = fetch_book_info(book_id)
 
     # Vérification que les informations du livre ne sont pas None
@@ -98,6 +101,7 @@ def fetch_and_process_book(book_id):
         return None
 
     # Récupération du contenu du livre
+    print(f"Récupération du contenu du livre {book_id}")
     content = fetch_book_content(book_id)
 
     # Vérification que le contenu du livre n'est pas None
@@ -106,9 +110,11 @@ def fetch_and_process_book(book_id):
         return None
 
     # Comptage du nombre de mots différents
+    print(f"Comptage du nombre de mots différents pour le livre {book_id}")
     unique_words = set(re.findall(r'\b\w+\b', content.lower()))
 
     # Filtrage des mots de 1 ou 2 caractères alphanumériques
+    print(f"Filtrage des mots de 1 ou 2 caractères alphanumériques pour le livre {book_id}")
     filtered_words = filter_words(unique_words)
 
     # Création des résultats pour ce livre
@@ -127,6 +133,7 @@ def fetch_and_process_book(book_id):
         book_results.append(result)
 
     # Mise à jour des résultats pour chaque mot
+    print(f"Mise à jour des résultats pour chaque mot pour le livre {book_id}")
     for result in book_results:
         connexion.get_collection('index').update_one(
             {"_id": result["_id"]},
@@ -136,4 +143,3 @@ def fetch_and_process_book(book_id):
     return book_results
 
 
-create_index()

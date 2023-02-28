@@ -51,6 +51,7 @@ async def get_book_info(book_id: int):
 
 @router.get("/search")
 async def search_books(q: str):
+    q = q.strip().lower()
     # Recherche des documents contenant le mot-clé dans la table des index
     results = index_table.find({"word": {"$regex": f".*{q}.*"}})
 

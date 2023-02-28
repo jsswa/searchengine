@@ -38,22 +38,12 @@ async def get_book_info(book_id: int):
     return book_content
 
 
-# @router.get("/page={page_num}")
-# def get_page_books(page_num: int):
-#     try:
-#         url = f"https://gutendex.com/books/page={page_num}"
-#         response = requests.get(url)
-#     except Exception as e:
-#         raise HTTPException(status_code=500,
-#                             detail=f"Erreur lors de la récupération des informations des livre")
-#     return json.loads(response.content.decode())
-
-
 @router.get("/search")
 async def search_books(q: str):
     q = q.strip().lower()
     # Recherche des documents contenant le mot-clé dans la table des index
     results = index_table.find({"word": {"$regex": f".*{q}.*"}})
+
 
     # Création du graphe de Jaccard pour les documents correspondants
     G = nx.Graph()
@@ -75,7 +65,7 @@ async def search_books(q: str):
     books = []
     for result in results:
         for book in result["books"]:
-            book_id = book["book_id"]
+            book_id = int(book["book_id"])
             count = book["count"]
             pagerank = pageranks.get(book_id, 0)
             books.append({"book_id": book_id, "count": count, "pagerank": pagerank})
@@ -95,6 +85,7 @@ async def search_books(q: str):
 
     # Renvoi de la liste des livres correspondants et des voisins des livres les plus pertinents
     return {"books": sorted_books, "neighbors": list(neighbors)}
+
 
 
 @router.get('/search/regex')
